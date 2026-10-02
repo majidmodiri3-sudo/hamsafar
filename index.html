@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>برنامه مدیریت کارها</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: sans-serif; background: #eef2f5; padding: 20px; display: flex; justify-content: center; margin: 0; }
+        .container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
+        h3 { text-align: center; color: #333; margin-top: 0; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; outline: none; }
+        input:focus { border-color: #3ecf8e; }
+        button#addBtn { padding: 12px 20px; cursor: pointer; background: #3ecf8e; color: white; border: none; border-radius: 8px; font-family: inherit; font-weight: bold; transition: 0.2s; }
+        button#addBtn:hover { background: #2ea872; }
+        ul { padding: 0; margin: 0; list-style: none; }
+        li { background: #f9f9f9; padding: 12px; margin-bottom: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; }
+        .del-btn { background: #ff4d4d; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: 0.2s; }
+        .del-btn:hover { background: #cc0000; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h3>برنامه مدیریت کارها</h3>
+        <div class="input-group">
+            <input type="text" id="taskInput" placeholder="یک کار جدید بنویسید...">
+            <button id="addBtn">اضافه کن</button>
+        </div>
+        <ul id="taskList"></ul>
+    </div>
+
+    <script>
+        // اطلاعات پروژه شما
+        const supabaseUrl = 'https://xvmaoqvscwhcbeapczku.supabase.co'; 
+        const supabaseKey = 'sb_publishable_pXb4VLA9tnwHmm6_OdxTZw_UXTumrGI';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        const input = document.getElementById('taskInput');
+        const btn = document.getElementById('addBtn');
+        const list = document.getElementById('taskList');
+
+        // تابع حذف کار
+        async function deleteTask(id) {
+            const { error } = await supabase.from('tasks').delete().eq('id', id);
+            if (error) console.error(error);
+            else loadTasks();
+        }
+
+        // تابع خواندن کارها
+        async function loadTasks() {
+            const { data, error } = await supabase.from('tasks').select('*').order('inserted_at', { ascending: false });
+            if (error) return console.error(error);
+            
+            list.innerHTML = '';
+            data.forEach(task => {
+                const li = document.createElement('li');
+                const span = document.createElement('span');
+                span.textContent = task.title;
+                li.appendChild(span);
+                
+                const delBtn = document.createElement('button');
+                delBtn.textContent = 'حذف';
+                delBtn.className = 'del-btn';
+                delBtn.onclick = () => deleteTask(task.id);
+                
+                li.appendChild(delBtn);
+                list.appendChild(li);
+            });
+        }
+
+        // تابع اضافه کردن کار
+        btn.onclick = async () => {
+            if (!input.value) return;
+            const { error } = await supabase.from('tasks').insert([{ title: input.value }]);
+            if (error) { alert('خطا در ذخیره!'); console.error(error); } 
+            else { input.value = ''; loadTasks(); }
+        };
+
+        // اجرای اولیه
+        loadTasks();
+    </script>
+</body>
+</html>
