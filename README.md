@@ -1,1 +1,107 @@
-# hamsafar
+# hamsafar<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>برنامه مدیریت کارها (نسخه تست)</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: sans-serif; background: #eef2f5; padding: 20px; display: flex; justify-content: center; margin: 0; min-height: 100vh; align-items: flex-start; }
+        .container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 500px; margin-top: 40px; }
+        h3 { text-align: center; color: #333; margin-top: 0; }
+        .badge { text-align: center; font-size: 12px; color: #888; margin-bottom: 15px; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 15px; }
+        input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; outline: none; box-sizing: border-box; }
+        input:focus { border-color: #3ecf8e; }
+        button#addBtn { padding: 12px 20px; cursor: pointer; background: #3ecf8e; color: white; border: none; border-radius: 8px; font-family: inherit; font-weight: bold; }
+        button#addBtn:hover { background: #2ea872; }
+        ul { padding: 0; margin: 0; list-style: none; }
+        li { background: #f9f9f9; padding: 12px; margin-bottom: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; }
+        .del-btn { background: #ff4d4d; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+        .del-btn:hover { background: #cc0000; }
+        .empty { text-align: center; color: #999; font-size: 13px; padding: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h3>📝 برنامه مدیریت کارها</h3>
+        <p class="badge">🧪 نسخه تست تیم</p>
+        <div class="input-group">
+            <input type="text" id="taskInput" placeholder="یک کار جدید بنویسید...">
+            <button id="addBtn">اضافه کن</button>
+        </div>
+        <ul id="taskList"></ul>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://xvmaoqvscwhcbeapczku.supabase.co'; 
+        const supabaseKey = 'sb_publishable_pXb4VLA9tnwHmm6_OdxTZw_UXTumrGI';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        const taskInput = document.getElementById('taskInput');
+        const addBtn = document.getElementById('addBtn');
+        const taskList = document.getElementById('taskList');
+
+        async function loadTasks() {
+            const { data, error } = await supabase
+                .from('tasks')
+                .select('*')
+                .order('created_at', { ascending: false });
+            
+            if (error) { console.error(error); return; }
+            
+            taskList.innerHTML = '';
+            
+            if (data.length === 0) {
+                taskList.innerHTML = '<div class="empty">هنوز کاری اضافه نشده</div>';
+                return;
+            }
+            
+            data.forEach(task => {
+                const li = document.createElement('li');
+                const span = document.createElement('span');
+                span.textContent = task.title;
+                li.appendChild(span);
+                
+                const delBtn = document.createElement('button');
+                delBtn.textContent = 'حذف';
+                delBtn.className = 'del-btn';
+                delBtn.onclick = () => deleteTask(task.id);
+                li.appendChild(delBtn);
+                
+                taskList.appendChild(li);
+            });
+        }
+
+        async function addTask() {
+            const title = taskInput.value.trim();
+            if (!title) return;
+            
+            const { error } = await supabase
+                .from('tasks')
+                .insert([{ title: title }]);
+            
+            if (error) {
+                alert('خطا: ' + error.message);
+                console.error(error);
+            } else {
+                taskInput.value = '';
+                loadTasks();
+            }
+        }
+
+        async function deleteTask(id) {
+            const { error } = await supabase.from('tasks').delete().eq('id', id);
+            if (error) alert('خطا: ' + error.message);
+            else loadTasks();
+        }
+
+        addBtn.onclick = addTask;
+        taskInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addTask();
+        });
+
+        loadTasks();
+    </script>
+</body>
+</html>
